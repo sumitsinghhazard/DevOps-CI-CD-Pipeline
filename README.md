@@ -1,9 +1,3 @@
-# csc-519-project 
-Team Members: 
-  - Ashwin Sapre (asapre)
-  - Nitesh Mishra (nmishra4)
-  - Sumit Singh (ssingh57)
-
 # Folder Structure
 
     .
