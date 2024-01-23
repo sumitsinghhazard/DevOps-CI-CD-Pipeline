@@ -1,0 +1,66 @@
+name: Pre Prod Server Deployment 
+
+on:
+  push:
+    branches: 
+      - 'main'
+
+jobs:
+  Deploy-to-Pre-Prod:
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: /home/asapre/actions-runner/_work/csc-519-project/csc-519-project/
+
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v3
+      
+      - name: check code
+        run: |
+          cd ./coffee-project-main
+          cat app.js
+          cat vars.json
+          
+      - name: Install Docker
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y docker.io
+          sudo systemctl start docker
+          sudo systemctl enable docker
+      
+      - name: Set permission
+        run: 'sudo chmod 666 /var/run/docker.sock'
+
+      - name: Login to Docker Registry
+        uses: docker/login-action@v1
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}
+          password: ${{ secrets.DOCKER_PASSWORD }}
+      
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v2
+      
+      - name: Build Docker Image
+        run: docker build -t coffee-application:version1.0 .
+
+      - name: Tag Docker Image
+        run: docker tag coffee-application:version1.0 nmishra31/coffee-app-server:version1.0
+
+      - name: Push Docker Image
+        run: docker push nmishra31/coffee-app-server:version1.0
+        
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.10'  # Specify the Python version required for Ansible
+      
+      - name: Install Ansible
+        run: |
+          sudo apt update
+          sudo apt install -y software-properties-common
+          sudo apt-add-repository --yes --update ppa:ansible/ansible
+          sudo apt install -y ansible
+          
+      - name: Run Ansible Playbook
+        run: ansible-playbook -i /home/asapre/actions-runner/_work/csc-519-project/csc-519-project/playbooks/hosts.yaml /home/asapre/actions-runner/_work/csc-519-project/csc-519-project/playbooks/server-deployment.yaml --extra-vars "server_type=preprod_server" --extra-vars "docker_username=${{ secrets.DOCKER_USERNAME }}" --extra-vars "docker_password=${{ secrets.DOCKER_PASSWORD }}"

@@ -1,0 +1,40 @@
+name: Build and Test Coffee Application
+
+on:
+  pull_request:
+    branches: 
+        - 'release*'
+    types: [opened, reopened]
+
+jobs:
+  build-test-application:
+    runs-on: self-hosted
+    defaults:
+       run:
+         working-directory: /home/asapre/actions-runner/_work/csc-519-project/csc-519-project/coffee-project-main/
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+
+    steps:
+    - name: Check out repository code
+      uses: actions/checkout@v3
+    - run: echo "💡 The ${{ github.repository }} repository has been cloned to the runner."
+    - run: echo "🖥️ The workflow is now ready to test your code on the runner." 
+    - name: List files in the repository
+      run: |
+        ls -la ${{ github.workspace }}
+    - name: Use Node.js ${{ matrix.node-version }}
+      uses: actions/setup-node@v3
+      with:
+        node-version: ${{ matrix.node-version }}
+        cache: 'npm'
+        cache-dependency-path: 'coffee-project-main/package-lock.json'
+    - name: Install dependencies
+      run: npm ci
+    - name: Build Coffee Project 
+      run: npm run build --if-present
+    - name: Run Tests
+      run: npm test
+    - name: Run Tests with Coverage and Thresholds
+      run: npm run test-coverage

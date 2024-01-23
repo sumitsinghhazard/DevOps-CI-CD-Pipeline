@@ -1,0 +1,46 @@
+name: Style checks
+
+on:
+  pull_request:
+    branches:
+      - 'dev'
+    types: [opened, reopened]
+
+jobs:
+  prettier:
+    name: Style Check
+    runs-on: self-hosted
+    defaults:
+      run:
+        working-directory: /home/asapre/actions-runner/_work/csc-519-project/csc-519-project/coffee-project-main/
+    strategy:
+      matrix:
+        node-version: [18.x, 20.x]
+    steps:
+      - name: Checkout Repository
+        uses: actions/checkout@v2
+        
+      - name: Use Node.js ${{ matrix.node-version }}
+        uses: actions/setup-node@v3
+        with:
+            node-version: ${{ matrix.node-version }}
+            cache: 'npm'
+            cache-dependency-path: 'coffee-project-main/package-lock.json'
+          
+      - name: Install dependencies
+        run: npm ci 
+        
+      - name: install eslint and save to dependency file
+        run: npm install eslint --save-dev
+        
+      - name: Adding extra style guide
+        run: npm install eslint-config-airbnb-base --save-dev
+        
+      - name: Adding plugin
+        run: npm install eslint-plugin-import@latest --save-dev
+        
+      - name: Run ESLint
+        run: npx eslint --ignore-pattern .eslintrc.js /home/asapre/actions-runner/_work/csc-519-project/csc-519-project/coffee-project-main/
+        
+      - run: exit 0
+      

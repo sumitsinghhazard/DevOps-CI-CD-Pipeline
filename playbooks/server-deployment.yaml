@@ -1,0 +1,77 @@
+---
+- name: Deploy Docker container on server
+  hosts: "{{ server_type }}"
+  become: yes
+  tasks:
+        
+    - name: Expose port 80 with iptables
+      shell: "sudo iptables -I INPUT -p tcp -m tcp --dport 80 -j ACCEPT"
+      
+    - name: Install aptitude
+      apt:
+        name: aptitude
+        state: latest
+        update_cache: true
+
+    - name: Install required system packages
+      apt:
+        pkg:
+          - apt-transport-https
+          - ca-certificates
+          - curl
+          - software-properties-common
+          - python3-pip
+          - virtualenv
+          - python3-setuptools
+        state: latest
+        update_cache: true
+       
+    - name: Add Docker GPG apt Key
+      apt_key:
+        url: https://download.docker.com/linux/ubuntu/gpg
+        state: present
+
+    - name: Add Docker Repository
+      apt_repository:
+        repo: deb https://download.docker.com/linux/ubuntu focal stable
+        state: present
+
+    - name: Update apt and install docker-ce
+      apt:
+        name: docker-ce
+        state: latest
+        update_cache: true
+
+    - name: Install Docker Module for Python
+      pip:
+        name: docker
+   
+    - name: Log in to Docker Hub
+      docker_login:
+        username: "{{ docker_username }}"
+        password: "{{ docker_password }}"
+      environment:
+        DOCKER_USERNAME: "{{ docker_username }}"
+        DOCKER_PASSWORD: "{{ docker_password }}"
+     
+    - name: Pull Docker image from Docker Hub
+      docker_image:
+        name: nmishra31/coffee-app-server:version1.0
+        source: pull
+        
+    - name: Print message after pulling image
+      ansible.builtin.debug:
+        msg: "Image Pulled"
+
+    - name: Run Docker container
+      docker_container:
+        name: container_coffee
+        image: nmishra31/coffee-app-server:version1.0
+        state: started
+        ports:
+          - "8080:3000"  # Map your container port to the host
+        # Add other necessary configurations (volumes, environment variables, etc.)
+    - name: Print message after starting application
+      ansible.builtin.debug:
+        msg: "Application started"
+  

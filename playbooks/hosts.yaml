@@ -1,0 +1,9 @@
+[dev_server]
+
+[uat_server]
+152.7.178.95 ansible_user=nmishra4 
+
+[prod_server]
+
+[preprod_server]
+152.7.177.167 ansible_user=nmishra4 

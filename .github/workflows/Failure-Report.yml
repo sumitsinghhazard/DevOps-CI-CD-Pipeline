@@ -1,0 +1,41 @@
+name: Create Issue on Workflow Failure
+
+on:
+  workflow_run:
+    workflows: [secret-detection, Security Check, Style checks, UAT Server Deployment, Build and Test Coffee Application]
+    types: [completed]
+jobs:
+  notify:
+    if: ${{ github.event.workflow_run.conclusion == 'failure' }}
+    runs-on: self-hosted
+
+    steps:
+      - name: Get failure details
+        uses: actions/github-script@v5
+        id: get-failure-details
+        with:
+          script: |
+            const failedJob = github.event.workflow_run.jobs.find(job => job.conclusion === 'failure');
+            const jobSteps = failedJob.steps.map(step => `- ${step.name}: ${step.conclusion}`).join('\n');
+
+            console.log(`Workflow "${github.event.workflow_run.name}" failed in job "${failedJob.name}" at steps:\n${jobSteps}`);
+            console.log(`::set-output name=failureDetails::${jobSteps}`);
+
+      - name: Create Issue
+        uses: actions/github-script@v5
+        with:
+          github-token: ${{ secrets.GITHUB_TOKEN }}
+          script: |
+            const { data: repo } = await github.rest.repos.get({
+              owner: context.repo.owner,
+              repo: context.repo.repo
+            });
+
+            const issueBody = `### Workflow Failure\n\nWorkflow "${github.event.workflow_run.name}" failed in job "${github.event.workflow_run.jobs.find(job => job.conclusion === 'failure').name}" at steps:\n\n${steps.get-failure-details.outputs.failureDetails}`;
+
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `Workflow Failure: ${github.event.workflow_run.name}`,
+              body: issueBody
+            });

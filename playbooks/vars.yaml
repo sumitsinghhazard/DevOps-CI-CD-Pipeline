@@ -1,0 +1,10 @@
+git_repo: "git@github.ncsu.edu:CSC-519-project.git"
+git_user: "username" # specify the user who has permissions to clone the repository
+branch: "dev" # specify the branch
+git_dest: "." # or /path/to/your/coffee-project-main
+
+ansible_hosts:
+  - dev_server
+  - uat_server
+  - preprod_server
+  - prod_server
